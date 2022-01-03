@@ -1,5 +1,5 @@
 
-# Random Protocol V1 🧙‍♂️
+# Random Project 🧙‍♂️
 
 ## Project Structure
 - .github
