@@ -20,7 +20,7 @@ contract RandomToken is
         __UUPSUpgradeable_init();
         __Ownable_init();
         __ERC20Snapshot_init();
-        __ERC20PresetMinterPauser_init("Random", "STR");
+        __ERC20PresetMinterPauser_init("Random", "RNDM");
         __ERC20Permit_init("Random");
         _mint(msg.sender, initialSupply);
     }
