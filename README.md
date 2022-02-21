@@ -12,8 +12,6 @@
 	- deployment files for the different contracts of the protocol
 - deployments
 	- the deployed artifacts, same as artifacts but has the deployed address and other goodies per chain
-- patches
-	- node_module patches we need to properly compile on ^0.8.10
 - test
 	- Unit test files for the contracts
 - types
