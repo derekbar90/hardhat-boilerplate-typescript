@@ -1,116 +1,47 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
+// We require the Hardhat Runtime Environment explicitly here. This is optional 
 // but useful for running the script in a standalone fashion through `node <script>`.
 //
 // When running the script with `hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
+import { run, ethers, deployments } from "hardhat";
+import { abi as StrategyFactoryABI } from "../artifacts/contracts/StrategyFactory.sol/StrategyFactory.json";
+import { abi as StrategyABI } from "../artifacts/contracts/Strategy.sol/Strategy.json";
+import { Strategy, StrategyFactory, Strategy__factory } from "../types";
 
-import { Chance } from "chance";
-import sharp from "sharp";
-import { readdir } from "fs/promises";
-import { parseBaseLayer } from "./utils";
-import { BASE_LAYER_NAME, LAYERS_WITH_DEPENDENCIES } from "./utils/constants";
-import { LayerConfig } from "./utils/types";
 
 async function main() {
+  // await run('compile');
+  const DeployedStrategy = await deployments.get('Strategy');
+  const DeployedStrategyFactory = await deployments.get('StrategyFactory');
 
-  // Sort the assets by index
-  const layers = await (await readdir("./scripts/assets"))
-    .filter((location) => location.indexOf(".") == -1)
-    .sort((a, b) => {
-      const aPriority = Number(a.split("_")[0]);
-      const bPriority = Number(b.split("_")[0]);
-      return aPriority - bPriority;
-    });
+  const strategy = await ethers.getContractAt(StrategyABI, '0xc11258046d67f055a2f1470a3c41e85a11ed161d') as Strategy;
+  const factory = await ethers.getContractAt(StrategyFactoryABI, DeployedStrategyFactory.address) as StrategyFactory;
 
-  // Reverse the order of the layers so that the background is first (lowest priority)
-  const processedLayers = layers //.reverse();
+  console.log('DeployedStrategy', DeployedStrategy.address)
+  console.log('DeployedStrategyFactory', DeployedStrategyFactory.address)
+  console.log('Monday Test', ethers.utils.formatBytes32String('Monday Test'))
 
-  let backgroundLayer: string | null = null;
+  const deployedStrategy = await factory.createStrategy(
+    ethers.utils.formatBytes32String('Example Strategy2'),
+    '0x0357415D1430a862B93676C2aCe91991036a077C', 
+    '0xf654A0BDD40D457fb4AD2be66000AcceE65A3e85',
+    'https://google.com',
+    'https://google.com',
+    'QmT4AeWE9Q9EaoyLJiqaZuYQ8mJeq4ZBncjjFH9dQ9uDVA',
+    'QmT4AeWE9Q9EaoyLJiqaZuYQ8mJeq4ZBncjjFH9dQ9uDVB',
+    { gasLimit: '2000000' }
+  );
 
-  // Make x amount of combinations
-  let numberOfCombinations = 1;
-  
-  for (let i = 0; i < numberOfCombinations; i++) {
+  await deployedStrategy.wait()
 
-    // Create the configs for each layer
-    let layersConfig: Array<LayerConfig> = [];
-    
-    // Setup a chance instance, we use this for weighted randomization
-    const gamble = new Chance();
-
-    // Loop through each layer
-    for (const layer of processedLayers) {
-
-      // Get the metadata for the layer, aka the layer number
-      const layerNumber = Number(layer.split("_")[0]);
-
-      // This is a selector which is used for jaw selection etc
-      // base currently sets the skin tone
-      let baseLayerAttribute;
-      
-      // We use this because the largest number is the base layer (this might change)
-      if (layerNumber == processedLayers.length) {
-        console.log("Setting background layer", layer);
-
-        // Fetch all the files in the folder
-        const files = await readdir("./scripts/assets/" + layer);
-
-        // Pick one based on random selection
-        const file = gamble.pickone(files)
-        
-        // Set the base layer
-        backgroundLayer = `./scripts/assets/${layer}/${file}`;
-      } else {
-        console.log(`Setting layer ${layerNumber}`, layer);
-
-        // Fetch all the files in the folder
-        const files = await readdir("./scripts/assets/" + layer);
-
-        // If the base layer is current layer then 
-        // parse the details and save them
-        if(layer.indexOf(BASE_LAYER_NAME) > -1) {
-          // parse the base layer details  
-          baseLayerAttribute = parseBaseLayer(layer);
-        }
-        
-        if(LAYERS_WITH_DEPENDENCIES.some((dependency) => layer.indexOf(dependency) > -1)) {
-          // parse the base layer details  
-          baseLayerAttribute = parseBaseLayer(layer);
-        }
-        
-        // Pick one based on random selection
-        const file = gamble.pickone(files)
-
-        // Add the layer to the composite image
-        layersConfig.push({
-          priority: layerNumber,
-          weight: Math.random(),
-          fileLocation: `./scripts/assets/${layer}/${file}`,
-        });
-      }
-    }
-
-    if (backgroundLayer && layers.length > 0) {
-      await sharp(backgroundLayer)
-        .composite(
-          layersConfig.map((layer) => {
-            return {
-              input: layer.fileLocation,
-              gravity: "center",
-              ...layer.extraConfig,
-            };
-          })
-        )
-        .toFile(`combined_${i}.png`);
-    }
-  }
+  console.log('deployedStrategy', deployedStrategy.hash)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.
 main()
   .then(() => process.exit(0))
-  .catch((error) => {
+  .catch(error => {
     console.error(error);
     process.exit(1);
   });

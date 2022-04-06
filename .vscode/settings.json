@@ -15,8 +15,5 @@
     "solidity.compileUsingRemoteVersion": "v0.8.10+commit.fc410830",
     "jest.jestCommandLine": "yarn test",
     "mochaExplorer.files": "test/**/*.{j,t}s",
-    "solidity-va.debug.parser.showExceptions": true,
-    "cSpell.words": [
-        "pickone"
-    ]
+    "solidity-va.debug.parser.showExceptions": true
 }
